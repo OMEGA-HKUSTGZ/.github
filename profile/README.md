@@ -18,7 +18,7 @@ Our research connects multimodal perception, intent and motion modeling, and aut
 
 | Project | Links |
 | --- | --- |
-| **UniT** — unified geometry learning with a group autoregressive transformer | [Project page source](https://github.com/OMEGA-HKUSTGZ/unit-page) · [Paper](https://arxiv.org/abs/2605.21131) · [Code](https://github.com/Wang-xjtu/UniT) · [Live demo](https://enceladush-unit.hf.space/) |
+| **UniT** — unified geometry learning with a group autoregressive transformer | [Project page](https://omega-hkustgz.github.io/projects/unit/) · [Paper](https://arxiv.org/abs/2605.21131) · [Code](https://github.com/Wang-xjtu/UniT) · [Live demo](https://enceladush-unit.hf.space/) |
 | **PraxisWorld** — object-centric world-action model for composable robot manipulation | [Project page](https://sc2i-hkustgz.github.io/PraxisWorld/) |
 
-Lab website (preview): <https://anan-daily-d3gz8p1fr3a4af0d9-1482036123.tcloudbaseapp.com/omega/>
+Lab website (preview): <https://omega-hkustgz.github.io/>
