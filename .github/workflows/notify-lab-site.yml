@@ -1,0 +1,48 @@
+# Shared by every project page repository: ask omega-lab-site to republish
+# https://omega-hkustgz.github.io/ after a push. The lab site copies each page's
+# current main, as listed in its project-pages.json.
+#
+# Caller (in the project page repository):
+#   on:
+#     push: { branches: [main], paths-ignore: [README.md] }
+#     workflow_dispatch:
+#   jobs:
+#     publish:
+#       uses: OMEGA-HKUSTGZ/.github/.github/workflows/notify-lab-site.yml@main
+#       secrets: inherit
+#
+# Needs the organization secret LAB_SITE_DISPATCH_TOKEN (Contents: read and write
+# on omega-lab-site only). Without it the job warns and succeeds.
+name: Notify lab site
+
+on:
+  workflow_call:
+    secrets:
+      LAB_SITE_DISPATCH_TOKEN:
+        required: false
+
+permissions: {}
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: notify-lab-site-${{ github.repository }}
+      cancel-in-progress: true
+    steps:
+      - name: Ask omega-lab-site to republish
+        env:
+          GH_TOKEN: ${{ secrets.LAB_SITE_DISPATCH_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::LAB_SITE_DISPATCH_TOKEN is not available to $REPOSITORY; run the omega-lab-site deploy workflow by hand."
+            exit 0
+          fi
+          gh api repos/OMEGA-HKUSTGZ/omega-lab-site/dispatches \
+            -f event_type=project-page-updated \
+            -f "client_payload[repository]=$REPOSITORY" \
+            -f "client_payload[sha]=$SHA"
+          echo "Asked omega-lab-site to republish $REPOSITORY@$SHA."
