@@ -1,0 +1,45 @@
+# Shared by every OMEGA repository: check the shape the infra standard (R2) asks for.
+# https://github.com/OMEGA-HKUSTGZ/.github-private/blob/main/STANDARD.md
+#
+# AGENTS.md exists, has at most 60 lines and the four sections (这是什么 / 写在哪里 /
+# 怎么检查 / 坑, or What this is / Where to write / How to check / Pitfalls); README.md
+# exists; CLAUDE.md, if present, is only `@AGENTS.md`; there is no CONTRIBUTING.md.
+# The rules live in scripts/repo-shape.mjs here; run it locally with
+#   node scripts/repo-shape.mjs <repository-folder>
+#
+# Caller (its own small workflow, so it never slows other jobs):
+#   on: [push, pull_request]
+#   jobs:
+#     repo-shape:
+#       # @main: this is our own organization's workflow, so a fix to the check reaches
+#       # every repository at once. The job checks out the script from main as well.
+#       uses: OMEGA-HKUSTGZ/.github/.github/workflows/repo-shape.yml@main
+name: Repository shape
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  repo-shape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: repo
+          persist-credentials: false
+
+      # Same ref as the callers' `uses: ...@main`, so the workflow and its script match.
+      - uses: actions/checkout@v5
+        with:
+          repository: OMEGA-HKUSTGZ/.github
+          ref: main
+          path: omega-shared
+          sparse-checkout: scripts
+          persist-credentials: false
+
+      - name: Check AGENTS.md, README.md, CLAUDE.md and CONTRIBUTING.md
+        run: node omega-shared/scripts/repo-shape.mjs repo
