@@ -1,0 +1,55 @@
+# Publish a built static site to a public artifact repository (R5/R7: one way to
+# publish a public web page). A composite action runs inside the caller's job, so
+# the built directory is not uploaded and downloaded between jobs.
+#
+# Caller (after the build step, in the same job):
+#   - name: Publish
+#     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+#     uses: OMEGA-HKUSTGZ/.github/actions/publish-static-site@main
+#     with:
+#       deploy-key: ${{ secrets.PAGES_DEPLOY_KEY }}
+#       external-repository: OMEGA-HKUSTGZ/omega-hkustgz.github.io
+#       commit-message: Deploy ${{ github.repository }}@${{ github.sha }}
+name: Publish static site
+description: Push a built site directory to an artifact repository with a deploy key.
+
+inputs:
+  deploy-key:
+    description: SSH private key of a deploy key with write access to external-repository.
+    required: true
+  external-repository:
+    description: Artifact repository to push to, as owner/name.
+    required: true
+  publish-dir:
+    description: Built site directory to publish.
+    required: false
+    default: ./dist
+  commit-message:
+    description: Full commit message for the published commit.
+    required: true
+  publish-branch:
+    description: Branch of external-repository to push to.
+    required: false
+    default: main
+
+runs:
+  using: composite
+  steps:
+    - name: Disable Jekyll
+      shell: bash
+      env:
+        PUBLISH_DIR: ${{ inputs.publish-dir }}
+      run: touch "$PUBLISH_DIR/.nojekyll"
+
+    # No force_orphan: history is not what makes the artifact repository big, and an
+    # orphan push re-uploads every file.
+    - name: Publish
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        deploy_key: ${{ inputs.deploy-key }}
+        external_repository: ${{ inputs.external-repository }}
+        publish_branch: ${{ inputs.publish-branch }}
+        publish_dir: ${{ inputs.publish-dir }}
+        user_name: github-actions[bot]
+        user_email: 41898282+github-actions[bot]@users.noreply.github.com
+        full_commit_message: ${{ inputs.commit-message }}
