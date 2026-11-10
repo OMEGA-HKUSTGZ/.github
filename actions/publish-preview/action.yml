@@ -1,0 +1,105 @@
+# Give a pull request a link people can click: publish its built site to
+# https://omega-hkustgz.github.io/preview/<name>/ and say so on the pull request.
+# The preview repository is separate from every official site, so nothing live
+# changes. Remove the preview when the pull request closes.
+#
+# Caller (pull_request types: opened, synchronize, reopened, closed):
+#   permissions: { contents: read, pull-requests: write }
+#   steps:
+#     - ...build into ./dist with base path /preview/<name>/...
+#     - uses: OMEGA-HKUSTGZ/.github/actions/publish-preview@main
+#       with:
+#         mode: ${{ github.event.action == 'closed' && 'remove' || 'publish' }}
+#         name: site-pr-${{ github.event.number }}
+#         deploy-key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
+#
+# Needs the repository secret PREVIEW_DEPLOY_KEY (a deploy key with write access
+# to OMEGA-HKUSTGZ/preview). Without it the step warns and succeeds.
+name: Publish preview
+description: Publish a built site as a pull request preview, or remove it.
+
+inputs:
+  mode:
+    description: publish or remove.
+    required: false
+    default: publish
+  name:
+    description: Preview directory, lowercase letters, digits and hyphens (e.g. site-pr-18).
+    required: true
+  publish-dir:
+    description: Built site directory (publish only).
+    required: false
+    default: ./dist
+  deploy-key:
+    description: SSH private key of a deploy key with write access to the preview repository.
+    required: false
+    default: ''
+  preview-repository:
+    description: Preview repository, as owner/name.
+    required: false
+    default: OMEGA-HKUSTGZ/preview
+  preview-url:
+    description: Public address the preview repository is served at.
+    required: false
+    default: https://omega-hkustgz.github.io/preview
+  comment:
+    description: Post the link on the pull request (needs pull-requests write).
+    required: false
+    default: 'true'
+  github-token:
+    description: Token used to post the link.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  url:
+    description: Address of the preview, empty when nothing was published.
+    value: ${{ steps.publish.outputs.url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Publish or remove the preview
+      id: publish
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        NAME: ${{ inputs.name }}
+        PUBLISH_DIR: ${{ inputs.publish-dir }}
+        DEPLOY_KEY: ${{ inputs.deploy-key }}
+        PREVIEW_GIT: git@github.com:${{ inputs.preview-repository }}.git
+        PREVIEW_URL: ${{ inputs.preview-url }}
+        MESSAGE: ${{ inputs.mode }} ${{ inputs.name }} from ${{ github.repository }}@${{ github.sha }}
+      run: |
+        if [ -z "$DEPLOY_KEY" ]; then
+          echo "::warning::PREVIEW_DEPLOY_KEY is not available to $GITHUB_REPOSITORY; no preview was published."
+          exit 0
+        fi
+        bash "$GITHUB_ACTION_PATH/publish-preview.sh"
+        if [ "$MODE" = publish ]; then
+          echo "url=${PREVIEW_URL%/}/$NAME/" >> "$GITHUB_OUTPUT"
+        fi
+
+    # One comment per pull request, updated in place.
+    - name: Post the link
+      if: inputs.comment == 'true' && steps.publish.outputs.url != '' && github.event_name == 'pull_request'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        URL: ${{ steps.publish.outputs.url }}
+        PR: ${{ github.event.number }}
+      run: |
+        marker='<!-- omega-preview -->'
+        body="$marker
+        预览：$URL
+        （正式页面不受影响；合并或关闭后预览自动删除。）"
+        body=$(printf '%s\n' "$body" | sed 's/^ *//')
+        id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+          --jq "[.[] | select(.body | startswith(\"$marker\"))][0].id // empty" || true)
+        if [ -n "$id" ]; then
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -f body="$body" >/dev/null
+        else
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$body" >/dev/null \
+            || echo "::warning::could not post the preview link (pull-requests: write is needed)."
+        fi
+        echo "::notice::Preview: $URL"
