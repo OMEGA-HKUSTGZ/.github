@@ -5,7 +5,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [scripts/**, actions/**, .github/workflows/test.yml]
+    paths: [scripts/**, actions/**, templates/**, .github/workflows/test.yml]
 
 permissions:
   contents: read
@@ -22,4 +22,5 @@ jobs:
         with:
           node-version: 22
       - run: node --test scripts/repo-shape.test.mjs
+      - run: node --test templates/project-page/test.mjs
       - run: bash actions/publish-preview/test.sh
