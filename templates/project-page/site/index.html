@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Leave this as it is: pull-request previews are switched to noindex by the workflow. -->
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://omega-hkustgz.github.io/projects/{{slug}}/" />
+    <title>{{title}} — OMEGA Lab</title>
+    <meta name="description" content="TODO: one sentence on what the work is. A project of OMEGA Lab, HKUST(GZ)." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="OMEGA Lab" />
+    <meta property="og:title" content="{{title}} — OMEGA Lab" />
+    <meta property="og:description" content="TODO: the same sentence as the description above." />
+    <meta property="og:url" content="https://omega-hkustgz.github.io/projects/{{slug}}/" />
+    <meta property="og:image" content="https://omega-hkustgz.github.io/projects/{{slug}}/assets/media/teaser.png" />
+    <meta property="og:image:alt" content="TODO: what the lead figure shows" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="assets/brand/omega-mark.svg" type="image/svg+xml" />
+    <link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="assets/css/omega-page.css?v=1" />
+    <link rel="stylesheet" href="assets/css/page.css?v=1" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <!-- Header, breadcrumb and footer link back to the lab site with ../../ because the
+         page is served two levels down, at /projects/<slug>/. Keep that depth. -->
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="wordmark" href="../../" aria-label="OMEGA Lab home">
+          <img class="omega-glyph" src="assets/brand/omega-mark.svg" alt="" width="48" height="48" />
+          <span class="brand-copy">
+            <span class="brand-name">OMEGA<span class="brand-lab">LAB</span></span>
+            <span class="brand-expansion">
+              <span>Omnimodal Multi-Embodiment</span>
+              <span>Generalist Agents</span>
+            </span>
+          </span>
+        </a>
+        <div class="header-divider" aria-hidden="true"></div>
+        <span class="header-context">HKUST(GZ)</span>
+        <nav class="main-nav" aria-label="OMEGA Lab">
+          <a href="../../research/">Research</a>
+          <a href="../../publications/">Publications</a>
+          <a href="../../people/">People</a>
+          <a href="../../join/">Join</a>
+        </nav>
+      </div>
+    </header>
+
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <div class="container crumbs-inner">
+        <ol>
+          <li><a href="../../">OMEGA Lab</a></li>
+          <li><a href="../../research/">Research</a></li>
+          <li aria-current="page">{{title}}</li>
+        </ol>
+        <a class="crumbs-back" href="../../research/"><span aria-hidden="true">←</span> Back to research</a>
+      </div>
+    </nav>
+
+    <main id="main">
+      <section class="hero container">
+        <p class="eyebrow"><span class="eyebrow-rule"></span>TODO: RESEARCH AREA · YEAR</p>
+        <!-- A name that is a phrase rather than a word: <h1 class="title-long">. -->
+        <h1>{{title}}</h1>
+        <p class="subtitle">TODO: the rest of the paper title</p>
+
+        <!-- Names, order and affiliations exactly as on the paper. -->
+        <ul class="authors">
+          <li>TODO: First Author<sup>1</sup></li>
+          <li>TODO: Last Author<sup>1*</sup></li>
+        </ul>
+        <ol class="affiliations">
+          <li><sup>1</sup>TODO: affiliation as printed on the paper</li>
+          <li><sup>*</sup>Corresponding author</li>
+        </ol>
+
+        <!-- Only links that exist and are public. No link, no button. -->
+        <div class="actions">
+          <a class="button" href="https://arxiv.org/abs/TODO">Paper <span aria-hidden="true">↗</span></a>
+          <a class="button button-light" href="https://github.com/TODO">Code <span aria-hidden="true">↗</span></a>
+          <a class="button button-light" href="#citation">BibTeX</a>
+        </div>
+      </section>
+
+      <section class="container" aria-label="Overview figure">
+        <!-- The lead figure, usually the paper's teaser. It is also the link-preview image
+             (og:image above). Export figures at about 2400 px wide; keep width and height
+             attributes equal to the file's pixel size. -->
+        <figure class="media-frame">
+          <img src="assets/media/teaser.png" width="2400" height="1350" alt="TODO: describe the figure for someone who cannot see it" />
+          <figcaption>TODO: caption. <span class="figure-source">Fig. 1 of the paper.</span></figcaption>
+        </figure>
+        <nav class="chapters" aria-label="On this page">
+          <a href="#overview">Overview</a>
+          <a href="#method">Method</a>
+          <a href="#results">Results</a>
+          <a href="#demos">Demos</a>
+          <a href="#citation">Citation</a>
+        </nav>
+      </section>
+
+      <section class="section container" id="overview">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow"><span class="eyebrow-rule"></span>OVERVIEW</p>
+            <h2>TODO: the idea in one line</h2>
+          </div>
+          <p>TODO: three or four sentences in plain words: the problem, what the work does about it, and what came out. Take the claims from the paper; do not add new ones.</p>
+        </div>
+
+        <!-- Two to four highlights. -->
+        <ul class="capabilities">
+          <li>
+            <span class="cap-index">01</span>
+            <h3>TODO: highlight</h3>
+            <p>TODO: one or two sentences.</p>
+          </li>
+          <li>
+            <span class="cap-index">02</span>
+            <h3>TODO: highlight</h3>
+            <p>TODO: one or two sentences.</p>
+          </li>
+          <li>
+            <span class="cap-index">03</span>
+            <h3>TODO: highlight</h3>
+            <p>TODO: one or two sentences.</p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section section-tint" id="method">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow"><span class="eyebrow-rule"></span>METHOD</p>
+              <h2>TODO: what the method is</h2>
+            </div>
+            <p>TODO: how it works, in a short paragraph.</p>
+          </div>
+
+          <figure class="media-frame">
+            <img src="assets/media/method.png" width="2400" height="1100" loading="lazy" alt="TODO: describe the method figure" />
+            <figcaption>TODO: caption. <span class="figure-source">Fig. 2 of the paper.</span></figcaption>
+          </figure>
+
+          <!-- Two to four components. -->
+          <ul class="method-parts">
+            <li>
+              <h3>TODO: component</h3>
+              <p>TODO: what it does.</p>
+            </li>
+            <li>
+              <h3>TODO: component</h3>
+              <p>TODO: what it does.</p>
+            </li>
+            <li>
+              <h3>TODO: component</h3>
+              <p>TODO: what it does.</p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section container" id="results">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow"><span class="eyebrow-rule"></span>RESULTS</p>
+            <h2>TODO: what was measured</h2>
+          </div>
+          <p>TODO: benchmarks, baselines and setting, in two or three sentences.</p>
+        </div>
+
+        <!-- Two to four headline numbers. Every number on the page comes from the paper,
+             with its unit and setting; none is rounded up or invented. -->
+        <dl class="stats">
+          <div>
+            <dt>TODO: metric · setting</dt>
+            <dd>TODO</dd>
+            <dd class="stat-note">TODO: what the number means and where it is in the paper.</dd>
+          </div>
+          <div>
+            <dt>TODO: metric · setting</dt>
+            <dd>TODO</dd>
+            <dd class="stat-note">TODO: what the number means and where it is in the paper.</dd>
+          </div>
+          <div>
+            <dt>TODO: metric · setting</dt>
+            <dd>TODO</dd>
+            <dd class="stat-note">TODO: what the number means and where it is in the paper.</dd>
+          </div>
+        </dl>
+
+        <!-- One block per table. Copy the numbers from the paper's source, mark the paper's
+             best values with class="best" and the paper's own method with class="is-ours". -->
+        <div class="result-block">
+          <h3>TODO: table title</h3>
+          <p>TODO: one sentence on what the table shows.</p>
+          <p class="table-caption">TODO: Table N of the paper: what, on which benchmark, in which units.</p>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Method</th>
+                  <th scope="col">TODO: metric ↑</th>
+                  <th scope="col">TODO: metric ↓</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">TODO: baseline</th>
+                  <td>TODO</td>
+                  <td>TODO</td>
+                </tr>
+                <tr class="is-ours">
+                  <th scope="row">{{title}}</th>
+                  <td class="best">TODO</td>
+                  <td class="best">TODO</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note">TODO: the table's footnotes, or delete this line.</p>
+        </div>
+      </section>
+
+      <!-- Demos are optional: delete this whole section, and its link in the chapter list,
+           when there is no public demo. Never fill it with placeholders.
+           Every clip and photo carries data-evidence and a matching visible tag:
+             simulation  -> <span class="evidence-tag">Simulation</span>
+             hil         -> <span class="evidence-tag">Hardware-in-the-loop</span>
+             real-world  -> <span class="evidence-tag">Real-world</span>
+             animation   -> <span class="evidence-tag">Animation</span>   (explains the method; shows no result)
+           Label what the material actually is. A simulated run on real onboard hardware is
+           hil, not real-world. -->
+      <section class="section section-tint" id="demos">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow"><span class="eyebrow-rule"></span>DEMOS</p>
+              <h2>TODO: what the demos show</h2>
+            </div>
+            <p>TODO: one or two sentences on the setup.</p>
+          </div>
+          <div class="demo-grid">
+            <figure class="media-frame video-frame" data-evidence="simulation">
+              <video src="assets/media/demo.mp4" poster="assets/media/demo-poster.jpg" width="1280" height="720" controls muted playsinline preload="none"></video>
+              <figcaption><span class="evidence-tag">Simulation</span>TODO: what is shown, in which environment.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section container" id="citation">
+        <p class="eyebrow"><span class="eyebrow-rule"></span>CITATION</p>
+        <div class="bibtex">
+          <button class="copy" type="button" data-copy="#bibtex">Copy</button>
+          <pre id="bibtex"><code>@misc{TODO: key,
+  title={TODO},
+  author={TODO},
+  year={TODO},
+  eprint={TODO},
+  archivePrefix={arXiv},
+  primaryClass={TODO},
+  url={https://arxiv.org/abs/TODO},
+}</code></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <a class="wordmark small" href="../../">
+          <img class="omega-glyph" src="assets/brand/omega-mark.svg" alt="" width="36" height="36" />
+          <span>OMEGA<span class="brand-lab">LAB</span></span>
+        </a>
+        <p>{{title}} is part of OMEGA Lab's research at HKUST(GZ).</p>
+        <a class="text-link" href="../../research/">More research <span aria-hidden="true">→</span></a>
+      </div>
+    </footer>
+
+    <script src="assets/js/omega-page.js?v=1" defer></script>
+  </body>
+</html>

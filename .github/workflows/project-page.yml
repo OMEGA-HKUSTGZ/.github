@@ -1,0 +1,105 @@
+# Shared by every project page repository (one static page, published by omega-lab-site at
+# https://omega-hkustgz.github.io/projects/<slug>/). It runs the page's own check, gives a
+# pull request a preview link, and asks the lab site to republish after a push to main.
+# Pages start from templates/project-page in this repository.
+#
+# Caller (the page repository's .github/workflows/page.yml):
+#   on:
+#     push: { branches: [main], paths-ignore: [README.md] }
+#     pull_request: { types: [opened, synchronize, reopened, closed] }
+#     workflow_dispatch:
+#   permissions: { contents: read, pull-requests: write }
+#   jobs:
+#     page:
+#       uses: OMEGA-HKUSTGZ/.github/.github/workflows/project-page.yml@main
+#       with: { slug: lightvln }
+#       secrets: inherit
+#
+# The preview is https://omega-hkustgz.github.io/preview/<slug>-pr-<number>/; it is not
+# indexed and is removed when the pull request closes. It needs the repository secret
+# PREVIEW_DEPLOY_KEY (a deploy key with write access to OMEGA-HKUSTGZ/preview); republishing
+# needs the organization secret LAB_SITE_DISPATCH_TOKEN. Without either, that step warns and
+# the run still passes.
+name: Project page
+
+on:
+  workflow_call:
+    inputs:
+      slug:
+        description: The page's path on the lab site, /projects/<slug>/.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # The same command the page's AGENTS.md tells agents to run before committing.
+      - run: node tools/check.mjs
+
+  repo-shape:
+    if: github.event.action != 'closed'
+    uses: OMEGA-HKUSTGZ/.github/.github/workflows/repo-shape.yml@main
+
+  preview:
+    needs: check
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: project-page-preview-${{ github.repository }}-${{ github.event.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: page
+          persist-credentials: false
+      # Same ref as the callers' `uses: ...@main`, so the workflow and its script match.
+      - uses: actions/checkout@v5
+        with:
+          repository: OMEGA-HKUSTGZ/.github
+          ref: main
+          path: omega-shared
+          sparse-checkout: scripts
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Build the preview (noindex, marked as a draft)
+        run: node omega-shared/scripts/project-page-preview.mjs page dist
+      - uses: OMEGA-HKUSTGZ/.github/actions/publish-preview@main
+        with:
+          name: ${{ inputs.slug }}-pr-${{ github.event.number }}
+          publish-dir: ./dist
+          deploy-key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
+
+  remove-preview:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: OMEGA-HKUSTGZ/.github/actions/publish-preview@main
+        with:
+          mode: remove
+          name: ${{ inputs.slug }}-pr-${{ github.event.number }}
+          deploy-key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
+
+  publish:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    uses: OMEGA-HKUSTGZ/.github/.github/workflows/notify-lab-site.yml@main
+    secrets: inherit
