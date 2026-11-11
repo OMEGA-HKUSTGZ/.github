@@ -22,7 +22,9 @@ d=$(mktemp -d); trap 'rm -rf "$d"' EXIT
 titles=$(gh repo deploy-key list --repo "$PREVIEW" --json title --jq '.[].title')
 for r in "$@"; do
   r=${r#"$ORG/"}
-  if gh secret list --repo "$ORG/$r" --json name --jq '.[].name' | grep -qx PREVIEW_DEPLOY_KEY; then
+  # Read the list first: with pipefail, a grep that stops early could make an existing secret look absent.
+  secrets=$(gh secret list --repo "$ORG/$r" --json name --jq '.[].name')
+  if grep -qx PREVIEW_DEPLOY_KEY <<<"$secrets"; then
     echo "$r: already has PREVIEW_DEPLOY_KEY"
   elif grep -qxF "$r previews" <<<"$titles"; then
     # A key without its secret: nobody holds the private half. Remove it by hand, then run again.
@@ -36,8 +38,11 @@ for r in "$@"; do
     echo "$r: key created"
   fi
   # The preview step of earlier runs only warned; run each open pull request's check again.
-  gh pr list --repo "$ORG/$r" --state open --json headRefName --jq '.[].headRefName' | while read -r branch; do
+  branches=$(gh pr list --repo "$ORG/$r" --state open --json headRefName --jq '.[].headRefName')
+  for branch in $branches; do
     run=$(gh run list --repo "$ORG/$r" --branch "$branch" --event pull_request --limit 1 --json databaseId,status --jq '.[0] | select(.status == "completed") | .databaseId')
-    if [ -n "$run" ]; then gh run rerun "$run" --repo "$ORG/$r" && echo "$r: re-running the check of $branch"; fi
+    if [ -n "$run" ]; then
+      if gh run rerun "$run" --repo "$ORG/$r"; then echo "$r: re-running the check of $branch"; else echo "$r: could not re-run the check of $branch; re-run it from the pull request" >&2; fi
+    fi
   done
 done
