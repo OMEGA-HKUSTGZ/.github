@@ -15,6 +15,10 @@
 #       with: { slug: lightvln }
 #       secrets: inherit
 #
+# A page whose large media live elsewhere adds `preview-exclude`, the same paths the lab site's
+# project-pages.json excludes for it:
+#       with: { slug: unit, preview-exclude: assets/media/point-clouds }
+#
 # The preview is https://omega-hkustgz.github.io/preview/<slug>-pr-<number>/; it is not
 # indexed and is removed when the pull request closes. It needs the repository secret
 # PREVIEW_DEPLOY_KEY (a deploy key with write access to OMEGA-HKUSTGZ/preview); republishing
@@ -28,6 +32,11 @@ on:
       slug:
         description: The page's path on the lab site, /projects/<slug>/.
         required: true
+        type: string
+      preview-exclude:
+        description: Paths in the page that the preview leaves out, separated by spaces (what the lab site excludes too).
+        required: false
+        default: ''
         type: string
 
 permissions:
@@ -80,7 +89,10 @@ jobs:
         with:
           node-version: 22
       - name: Build the preview (noindex, marked as a draft)
-        run: node omega-shared/scripts/project-page-preview.mjs page dist
+        env:
+          PREVIEW_EXCLUDE: ${{ inputs.preview-exclude }}
+        # Unquoted on purpose: one argument per path. The script rejects paths outside the page.
+        run: node omega-shared/scripts/project-page-preview.mjs page dist $PREVIEW_EXCLUDE
       - uses: OMEGA-HKUSTGZ/.github/actions/publish-preview@main
         with:
           name: ${{ inputs.slug }}-pr-${{ github.event.number }}

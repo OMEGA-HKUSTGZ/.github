@@ -20,7 +20,8 @@ node tools/serve.mjs     # look at it locally
 2. Put figures and clips in `assets/media/`, and write where each came from in `README.md`.
 3. Create the repository `OMEGA-HKUSTGZ/<slug>-page` (public), push, and open a pull request.
    The pull request gets a preview link once the repository has its `PREVIEW_DEPLOY_KEY`
-   (see [`actions/publish-preview`](../../actions/publish-preview)).
+   (`bash scripts/preview-key.sh <slug>-page`, run by an organisation owner; see
+   [`actions/publish-preview`](../../actions/publish-preview)).
 4. After the authors confirm, merge, then list the page in `omega-lab-site`'s
    `project-pages.json` with `"exclude": ["AGENTS.md", "tools"]`.
 
@@ -59,6 +60,7 @@ the repository-shape check on every push and pull request, a preview at
 `https://omega-hkustgz.github.io/preview/<slug>-pr-<number>/` for pull requests (built by
 [`scripts/project-page-preview.mjs`](../../scripts/project-page-preview.mjs): noindex, marked
 as a draft, removed when the pull request closes), and a lab-site republish after a push to
-`main`.
+`main`. A page whose large media are served from a media repository passes
+`preview-exclude` with the same paths the lab site excludes for it, as `unit-page` does.
 
 Tests: `node --test templates/project-page/test.mjs`.

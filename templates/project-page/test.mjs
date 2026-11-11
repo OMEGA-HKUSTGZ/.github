@@ -115,6 +115,10 @@ test('the preview is a noindex draft of what the lab site would publish', (t) =>
   for (const kept of ['assets/css/omega-page.css', 'assets/js/omega-page.js', 'assets/media/teaser.png']) assert.ok(existsSync(join(out, kept)), kept);
   for (const dropped of ['AGENTS.md', 'README.md', 'tools', '.github', '.gitignore']) assert.ok(!existsSync(join(out, dropped)), dropped);
   assert.throws(() => buildPreview(dir, join(dir, 'dist')), /outside the page folder/);
+  // A page can leave out what the lab site does not publish either (its "exclude" list).
+  buildPreview(dir, out, ['assets/media']);
+  assert.ok(!existsSync(join(out, 'assets/media')) && existsSync(join(out, 'assets/css/omega-page.css')));
+  for (const outside of ['../elsewhere', '/tmp', '.']) assert.throws(() => buildPreview(dir, out, [outside]), /inside the page folder/);
   edit(dir, (page) => page.replace(/<meta name="robots"[^>]*>/, ''));
   assert.throws(() => buildPreview(dir, out), /no <meta name="robots"/);
 });
