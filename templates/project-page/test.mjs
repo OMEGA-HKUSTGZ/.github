@@ -73,6 +73,8 @@ test('the check rejects what would break or mislead', async (t) => {
     'a slug that differs from the workflow': [(html) => html.replaceAll('/projects/example-project/', '/projects/other/'), /slug is "example-project", but the canonical address says "other"/],
     'no paper link': [(html) => html.replace(/>Paper </, '>Preprint <'), /must start with a "Paper" link/],
     'no BibTeX': [(html) => html.replace('@misc{', 'misc{'), /must hold the BibTeX entry/],
+    'a header without one of the lab site links': [(html) => html.replace(/\s*<a href="\.\.\/\.\.\/hardware\/">Platforms<\/a>/, ''), /must carry the lab site's header links, in its order: Research .*Platforms \(\.\.\/\.\.\/hardware\/\), Join/],
+    'header links in another order': [(html) => html.replace('<a href="../../people/">People</a>', '').replace('<a href="../../join/">Join</a>', '<a href="../../join/">Join</a><a href="../../people/">People</a>'), /must carry the lab site's header links/],
   };
   for (const [name, [change, expected]] of Object.entries(cases))
     await t.test(name, (t) => {

@@ -58,6 +58,8 @@ every page and that each folder carries its own slug. It rejects:
 
 - template placeholders that were not filled in;
 - a wrong or missing canonical address, title, description or link-preview image;
+- a header whose links differ from the lab site's (Research, Publications, Projects, People,
+  Platforms, Join, in that order);
 - links and media that do not exist, root-absolute paths, and scripts, styles or media loaded
   from another site;
 - images without `alt`, `width` and `height`; tables outside their scroll wrapper;
