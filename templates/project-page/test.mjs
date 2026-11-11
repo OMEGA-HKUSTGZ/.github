@@ -2,15 +2,15 @@
 //   node --test templates/project-page/test.mjs
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, truncateSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, truncateSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { buildPreview } from '../../scripts/project-page-preview.mjs';
+import { buildCollectionPreview, buildPreview } from '../../scripts/project-page-preview.mjs';
 import { countLines } from '../../scripts/repo-shape.mjs';
 import { createPage, updatePage } from './new-page.mjs';
-import { checkPage } from './site/tools/check.mjs';
+import { checkCollection, checkPage, isCollection } from './site/tools/check.mjs';
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==', 'base64');
 
@@ -112,6 +112,9 @@ test('the preview is a noindex draft of what the lab site would publish', (t) =>
   assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/);
   assert.doesNotMatch(html, /index, follow|rel="canonical"/);
   assert.match(html, /<body>\s*<p role="note"[^>]*>Draft preview for review/);
+  // Lab-site links name the site root, so they hold at any preview depth.
+  assert.match(html, /href="\/research\/"/);
+  assert.doesNotMatch(html, /="\.\.\/\.\.\//);
   for (const kept of ['assets/css/omega-page.css', 'assets/js/omega-page.js', 'assets/media/teaser.png']) assert.ok(existsSync(join(out, kept)), kept);
   for (const dropped of ['AGENTS.md', 'README.md', 'tools', '.github', '.gitignore']) assert.ok(!existsSync(join(out, dropped)), dropped);
   assert.throws(() => buildPreview(dir, join(dir, 'dist')), /outside the page folder/);
@@ -153,4 +156,59 @@ test('the commands work from the shell, also through a symlinked folder', (t) =>
   assert.match(checked.stderr, /template placeholder/);
   assert.equal(run(join(dir, 'template/new-page.mjs'), join(dir, 'page'), '--update').status, 0);
   assert.equal(run(join(dir, 'template/new-page.mjs')).status, 1);
+});
+
+/** A repository that keeps one page per folder, the way OMEGA-HKUSTGZ/project-pages is laid out. */
+function collection(...slugs) {
+  const dir = mkdtempSync(join(tmpdir(), 'project-pages-'));
+  cpSync(fileURLToPath(new URL('./site/tools', import.meta.url)), join(dir, 'tools'), { recursive: true });
+  for (const slug of slugs) {
+    createPage(join(dir, slug), { slug, title: 'Example' });
+    for (const file of ['index.html', 'README.md']) {
+      const path = join(dir, slug, file);
+      writeFileSync(path, readFileSync(path, 'utf8').replace(/TODO(: [^<"|\n,}]*)?/g, 'Example text'));
+    }
+    for (const media of ['teaser.png', 'method.png', 'demo-poster.jpg', 'demo.mp4']) writeFileSync(join(dir, slug, 'assets/media', media), PNG);
+  }
+  return dir;
+}
+
+test('a repository of pages: each folder is one page, checked and previewed together', (t) => {
+  const dir = collection('alpha', 'beta-two');
+  const out = mkdtempSync(join(tmpdir(), 'project-pages-preview-'));
+  t.after(() => [dir, out].forEach((path) => rmSync(path, { recursive: true, force: true })));
+  assert.ok(isCollection(dir) && !isCollection(join(dir, 'alpha')));
+  // The folder holds the page alone; tools, AGENTS.md and the workflow are the repository's.
+  for (const absent of ['tools', 'AGENTS.md', '.github', '.gitignore']) assert.ok(!existsSync(join(dir, 'alpha', absent)), absent);
+  assert.ok(existsSync(join(dir, 'alpha/assets/css/omega-page.css')) && existsSync(join(dir, 'alpha/README.md')));
+  assert.throws(() => createPage(join(dir, 'gamma-page'), { slug: 'gamma', title: 'Example' }), /the folder is the slug/);
+
+  const result = checkCollection(dir);
+  assert.deepEqual(result.problems, []);
+  assert.deepEqual(result.pages.map((page) => page.name), ['alpha', 'beta-two']);
+  const shell = spawnSync(process.execPath, [join(dir, 'tools/check.mjs')], { encoding: 'utf8' });
+  assert.equal(shell.status, 0, shell.stderr);
+  assert.match(shell.stdout, /2 project pages pass/);
+
+  // A problem names its page, and a folder must carry its own slug.
+  writeFileSync(join(dir, 'alpha/index.html'), readFileSync(join(dir, 'alpha/index.html'), 'utf8').replaceAll('/projects/alpha/', '/projects/other/'));
+  assert.match(checkCollection(dir).problems.join('\n'), /alpha\/index\.html: the folder is "alpha", but the canonical address says "other"/);
+  writeFileSync(join(dir, 'alpha/index.html'), readFileSync(join(dir, 'alpha/index.html'), 'utf8').replaceAll('/projects/other/', '/projects/alpha/'));
+
+  assert.deepEqual(buildCollectionPreview(dir, out), ['alpha', 'beta-two']);
+  const list = readFileSync(join(out, 'index.html'), 'utf8');
+  assert.match(list, /noindex, nofollow/);
+  assert.match(list, /<a href="alpha\/">Example<\/a>/);
+  const page = readFileSync(join(out, 'beta-two/index.html'), 'utf8');
+  assert.match(page, /noindex, nofollow/);
+  assert.match(page, /class="wordmark"[^>]*href="\/"|href="\/"[^>]*class="wordmark"/);
+  assert.ok(existsSync(join(out, 'beta-two/assets/media/teaser.png')) && !existsSync(join(out, 'beta-two/README.md')) && !existsSync(join(out, 'tools')));
+  assert.throws(() => buildCollectionPreview(dir, join(dir, 'dist')), /outside the repository folder/);
+
+  // --update on the repository refreshes its tools and every page's shared files.
+  writeFileSync(join(dir, 'tools/serve.mjs'), '// edited');
+  writeFileSync(join(dir, 'beta-two/assets/css/omega-page.css'), '/* edited */');
+  assert.deepEqual(updatePage(dir).sort(), ['beta-two/assets/css/omega-page.css', 'tools/serve.mjs']);
+  assert.deepEqual(updatePage(join(dir, 'alpha')), []);
+  assert.ok(!existsSync(join(dir, 'alpha/tools')));
 });
