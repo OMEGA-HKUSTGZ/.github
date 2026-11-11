@@ -1,7 +1,12 @@
-# Shared by every project page repository (one static page, published by omega-lab-site at
-# https://omega-hkustgz.github.io/projects/<slug>/). It runs the page's own check, gives a
-# pull request a preview link, and asks the lab site to republish after a push to main.
+# Shared by every repository of project pages (static pages published by omega-lab-site at
+# https://omega-hkustgz.github.io/projects/<slug>/). It runs the repository's own check, gives
+# a pull request a preview link, and asks the lab site to republish after a push to main.
 # Pages start from templates/project-page in this repository.
+#
+# New pages live in OMEGA-HKUSTGZ/project-pages, one folder per page. That repository calls
+# this workflow without `slug`; its preview is
+# https://omega-hkustgz.github.io/preview/project-pages-pr-<number>/<folder>/.
+# A repository that is one page (unit-page) passes its slug, as below.
 #
 # Caller (the page repository's .github/workflows/page.yml):
 #   on:
@@ -30,8 +35,9 @@ on:
   workflow_call:
     inputs:
       slug:
-        description: The page's path on the lab site, /projects/<slug>/.
-        required: true
+        description: The page's path on the lab site, /projects/<slug>/. Leave out in a repository that keeps one page per folder.
+        required: false
+        default: ''
         type: string
       preview-exclude:
         description: Paths in the page that the preview leaves out, separated by spaces (what the lab site excludes too).
@@ -90,12 +96,18 @@ jobs:
           node-version: 22
       - name: Build the preview (noindex, marked as a draft)
         env:
+          SLUG: ${{ inputs.slug }}
           PREVIEW_EXCLUDE: ${{ inputs.preview-exclude }}
         # Unquoted on purpose: one argument per path. The script rejects paths outside the page.
-        run: node omega-shared/scripts/project-page-preview.mjs page dist $PREVIEW_EXCLUDE
+        run: |
+          if [ -n "$SLUG" ]; then
+            node omega-shared/scripts/project-page-preview.mjs page dist $PREVIEW_EXCLUDE
+          else
+            node omega-shared/scripts/project-page-preview.mjs --collection page dist
+          fi
       - uses: OMEGA-HKUSTGZ/.github/actions/publish-preview@main
         with:
-          name: ${{ inputs.slug }}-pr-${{ github.event.number }}
+          name: ${{ inputs.slug || github.event.repository.name }}-pr-${{ github.event.number }}
           publish-dir: ./dist
           deploy-key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
 
@@ -107,7 +119,7 @@ jobs:
       - uses: OMEGA-HKUSTGZ/.github/actions/publish-preview@main
         with:
           mode: remove
-          name: ${{ inputs.slug }}-pr-${{ github.event.number }}
+          name: ${{ inputs.slug || github.event.repository.name }}-pr-${{ github.event.number }}
           deploy-key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
 
   publish:

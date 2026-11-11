@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Check an OMEGA project page before it is committed. CI runs the same command.
 //
-//   node tools/check.mjs [page-folder]
+//   node tools/check.mjs [folder]
 //
+// The folder is one page (index.html at its root) or a repository that keeps one page per
+// folder, as OMEGA-HKUSTGZ/project-pages does: then every page is checked.
 // Exits 1 and lists what to fix. No dependencies. This file comes from the project-page
 // template in OMEGA-HKUSTGZ/.github and is the same in every page repository.
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
@@ -207,15 +209,42 @@ export function checkPage(root) {
   return { problems, slug, files, mediaBytes };
 }
 
+/** A repository with neither index.html nor assets/ at its root keeps one page per folder. */
+export const isCollection = (root) => !existsSync(join(root, 'index.html')) && !existsSync(join(root, 'assets'));
+
+/** The page folders of a collection, by name. */
+export function pageFolders(root) {
+  return readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.') && existsSync(join(root, entry.name, 'index.html')))
+    .map((entry) => entry.name)
+    .sort();
+}
+
+/** Check every page of a collection; a page's folder is its slug. */
+export function checkCollection(root) {
+  const problems = [];
+  const pages = pageFolders(root).map((name) => {
+    const result = checkPage(join(root, name));
+    for (const problem of result.problems) problems.push(`${name}/${problem}`);
+    if (result.slug && result.slug !== name) problems.push(`${name}/index.html: the folder is "${name}", but the canonical address says "${result.slug}". They must match.`);
+    return { name, files: result.files ?? 0, mediaBytes: result.mediaBytes ?? 0 };
+  });
+  return { problems, pages };
+}
+
 // Run as a script (the path may go through a symlink, such as /tmp on macOS).
 if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const root = resolve(process.argv[2] ?? join(dirname(fileURLToPath(import.meta.url)), '..'));
-  const { problems, slug, files, mediaBytes } = checkPage(root);
+  const collection = isCollection(root);
+  const { problems, slug, files, mediaBytes, pages } = collection ? checkCollection(root) : checkPage(root);
   if (problems.length) {
     console.error(`${problems.length} problem${problems.length === 1 ? '' : 's'} in ${root}:\n`);
     for (const problem of problems) console.error(`- ${problem}`);
     console.error('\nHow a project page is put together: https://github.com/OMEGA-HKUSTGZ/.github/tree/main/templates/project-page');
     process.exit(1);
   }
-  console.log(`Project page "${slug}" passes: ${files} files, ${(mediaBytes / 1e6).toFixed(1)} MB of media.`);
+  if (collection) {
+    for (const page of pages) console.log(`${page.name}: ${page.files} files, ${(page.mediaBytes / 1e6).toFixed(1)} MB of media.`);
+    console.log(`${pages.length} project page${pages.length === 1 ? '' : 's'} pass.`);
+  } else console.log(`Project page "${slug}" passes: ${files} files, ${(mediaBytes / 1e6).toFixed(1)} MB of media.`);
 }

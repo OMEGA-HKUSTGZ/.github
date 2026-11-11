@@ -1,20 +1,23 @@
 #!/usr/bin/env node
 // Serve this page on your own machine at the depth it has on the lab site, so the ../../
-// links and relative media paths behave as they will when published.
+// links and relative media paths behave as they will when published. In a repository that
+// keeps one page per folder, every page is served at /projects/<folder>/.
 //
 //   node tools/serve.mjs [port]      then open the address it prints
 //
 // Supports HTTP Range (video seeking). Lab-site links are sent on to the official site.
 // This file comes from the project-page template in OMEGA-HKUSTGZ/.github.
-import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const port = Number(process.argv[2] ?? 4390);
-const slug = readFileSync(join(root, 'index.html'), 'utf8').match(/rel="canonical" href="[^"]*\/projects\/([^/"]+)\//)?.[1] ?? 'page';
-const base = `/projects/${slug}/`;
+const single = existsSync(join(root, 'index.html'));
+const slug = single ? (readFileSync(join(root, 'index.html'), 'utf8').match(/rel="canonical" href="[^"]*\/projects\/([^/"]+)\//)?.[1] ?? 'page') : '';
+const base = single ? `/projects/${slug}/` : '/projects/';
+const pages = () => readdirSync(root).filter((name) => !name.startsWith('.') && existsSync(join(root, name, 'index.html'))).sort();
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png',
@@ -24,7 +27,11 @@ const TYPES = {
 
 createServer((request, response) => {
   const path = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
-  if (!path.startsWith(base)) {
+  if (!single && path === base) {
+    const list = pages().map((name) => `<li><a href="${name}/">${name}</a></li>`).join('');
+    return void response.writeHead(200, { 'Content-Type': TYPES['.html'] }).end(`<!doctype html><title>Project pages</title><ul>${list}</ul>`);
+  }
+  if (!path.startsWith(base) || (!single && !pages().includes(path.slice(base.length).split('/')[0]))) {
     response.writeHead(302, { Location: path === '/' ? base : `https://omega-hkustgz.github.io${path}` }).end();
     return;
   }
