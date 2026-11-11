@@ -40,5 +40,7 @@ jobs:
 ```
 
 Each source repository has its own deploy key on the preview repository, so one can be revoked
-without touching the others. `publish-preview.sh` does the work and `test.sh` tests it against a
+without touching the others. `bash scripts/preview-key.sh <repository> ...` creates the key and the
+secret and re-runs the open pull requests' checks; it makes a credential, so an organisation
+owner runs it and adds the ledger row. `publish-preview.sh` does the work and `test.sh` tests it against a
 local repository.
