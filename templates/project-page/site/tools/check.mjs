@@ -24,6 +24,17 @@ export const EVIDENCE = {
   animation: 'Animation',
 };
 
+// The lab site's header links, in its order. A project page carries the same ones, so the
+// header does not change when a visitor moves between the site and a page.
+export const LAB_NAV = [
+  ['Research', '../../research/'],
+  ['Publications', '../../publications/'],
+  ['Projects', '../../projects/'],
+  ['People', '../../people/'],
+  ['Platforms', '../../hardware/'],
+  ['Join', '../../join/'],
+];
+
 const SLUG = '[a-z0-9]+(?:-[a-z0-9]+)*';
 const read = (path) => readFileSync(path, 'utf8');
 const stripComments = (text) =>
@@ -140,6 +151,10 @@ export function checkPage(root) {
     }
   const home = all.find((tag) => tag.name === 'a' && /\bwordmark\b/.test(tag.attrs.class ?? ''));
   if (home?.attrs.href !== '../../') fail('index.html: the header wordmark must link to "../../" (the lab site home).');
+  const navBlock = html.match(/<nav\b[^>]*class="[^"]*\bmain-nav\b[^"]*"[^>]*>([\s\S]*?)<\/nav>/)?.[1] ?? '';
+  const navLinks = [...navBlock.matchAll(/<a\b[^>]*href="([^"]*)"[^>]*>\s*([^<]*?)\s*<\/a>/g)].map((match) => [match[2], match[1]]);
+  if (JSON.stringify(navLinks) !== JSON.stringify(LAB_NAV))
+    fail(`index.html: <nav class="main-nav"> must carry the lab site's header links, in its order: ${LAB_NAV.map(([text, href]) => `${text} (${href})`).join(', ')}.`);
 
   // 4. The parts every project page has.
   const count = (name) => all.filter((tag) => tag.name === name && !tag.closing).length;
